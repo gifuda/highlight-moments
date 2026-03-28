@@ -57,28 +57,25 @@ const Settings = {
         </div>
 
         <div class="settings-section">
-          <h3>云盘设置</h3>
+          <h3>云盘设置（坚果云）</h3>
+          <p style="font-size:13px; color:var(--text-secondary); margin-bottom:10px;">
+            连接坚果云实现多人数据互通。需要先在坚果云「安全选项 → 第三方应用管理」中生成应用密码。
+          </p>
           <div class="settings-row">
-            <span class="settings-label">云盘类型</span>
-            <select class="settings-input" id="set-cloud-provider">
-              <option value="">未设置</option>
-              <option value="webdav">WebDAV</option>
-              <option value="icloud">iCloud</option>
-              <option value="googledrive">Google Drive</option>
-              <option value="baidu">百度网盘</option>
-            </select>
+            <span class="settings-label">坚果云邮箱</span>
+            <input type="email" class="settings-input" id="set-cloud-username" placeholder="your@email.com" value="${user?.cloudConfig?.username || ''}">
           </div>
-          <div class="settings-row" id="cloud-config-row" style="display:none;">
-            <span class="settings-label">云盘 URL</span>
-            <input type="text" class="settings-input" id="set-cloud-url" placeholder="https://webdav.example.com">
+          <div class="settings-row">
+            <span class="settings-label">应用密码</span>
+            <input type="password" class="settings-input" id="set-cloud-password" placeholder="第三方应用密码" value="${user?.cloudConfig?.password || ''}">
           </div>
-          <div class="settings-row" id="cloud-credentials-row" style="display:none;">
-            <span class="settings-label">用户名</span>
-            <input type="text" class="settings-input" id="set-cloud-username">
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <button class="btn-secondary" id="btn-test-cloud">测试连接</button>
+            <button class="btn-primary" id="btn-save-cloud">保存配置</button>
           </div>
-          <div class="settings-row" id="cloud-password-row" style="display:none;">
-            <span class="settings-label">密码</span>
-            <input type="password" class="settings-input" id="set-cloud-password">
+          <div class="settings-row" style="margin-top:8px;">
+            <span class="settings-label">同步状态</span>
+            <span class="settings-value" id="cloud-status">${user?.cloudConfig?.username ? '已配置' : '未配置'}</span>
           </div>
         </div>
 
@@ -173,85 +170,59 @@ const Settings = {
       Router.navigate('/');
     });
 
-    // 云盘类型选择
-    container.querySelector('#set-cloud-provider').addEventListener('change', e => {
-      const provider = e.target.value;
-      const configRow = document.getElementById('cloud-config-row');
-      const credentialsRow = document.getElementById('cloud-credentials-row');
-      const passwordRow = document.getElementById('cloud-password-row');
+    // 测试云盘连接
+    container.querySelector('#btn-test-cloud').addEventListener('click', async () => {
+      const username = document.getElementById('set-cloud-username').value.trim();
+      const password = document.getElementById('set-cloud-password').value.trim();
 
-      if (provider) {
-        configRow.style.display = 'flex';
-        credentialsRow.style.display = 'flex';
-        passwordRow.style.display = 'flex';
-      } else {
-        configRow.style.display = 'none';
-        credentialsRow.style.display = 'none';
-        passwordRow.style.display = 'none';
-      }
-    });
-
-    // 测试连接按钮
-    const testButton = document.createElement('button');
-    testButton.id = 'btn-test-connection';
-    testButton.className = 'btn-secondary';
-    testButton.textContent = '测试连接';
-    testButton.style.display = 'none';
-    testButton.style.marginTop = '10px';
-    testButton.addEventListener('click', async () => {
-      const provider = document.getElementById('set-cloud-provider').value;
-      const url = document.getElementById('set-cloud-url').value;
-      const username = document.getElementById('set-cloud-username').value;
-      const password = document.getElementById('set-cloud-password').value;
-
-      if (!provider || !url || !username || !password) {
-        Utils.toast('请填写完整的云盘信息');
+      if (!username || !password) {
+        Utils.toast('请填写坚果云邮箱和应用密码');
         return;
       }
 
       try {
-        const cloudConfig = { provider, url, username, password };
-        const providerClass = authService.cloudProviders[provider];
-        if (!providerClass) {
-          Utils.toast('不支持的云盘类型');
-          return;
-        }
-
-        const providerInstance = new providerClass(cloudConfig);
-        await providerInstance.testConnection();
-        Utils.toast('连接成功！');
+        Utils.toast('正在连接...');
+        const testProvider = new WebDAVProvider({
+          proxyUrl: 'http://localhost:3001/proxy',
+          username,
+          password
+        });
+        await testProvider.testConnection();
+        Utils.toast('连接成功！坚果云已就绪');
+        document.getElementById('cloud-status').textContent = '连接正常 ✓';
+        document.getElementById('cloud-status').style.color = '#34C759';
       } catch (err) {
         Utils.toast('连接失败: ' + err.message);
+        document.getElementById('cloud-status').textContent = '连接失败 ✗';
+        document.getElementById('cloud-status').style.color = '#FF3B30';
       }
     });
 
-    // 添加测试按钮到云盘配置区域
-    const cloudSection = container.querySelector('.settings-section:nth-child(3)'); // 云盘设置部分
-    cloudSection.appendChild(testButton);
-
     // 保存云盘配置
-    const saveCloudConfig = () => {
-      const provider = document.getElementById('set-cloud-provider').value;
-      if (!provider) return;
+    container.querySelector('#btn-save-cloud').addEventListener('click', () => {
+      const username = document.getElementById('set-cloud-username').value.trim();
+      const password = document.getElementById('set-cloud-password').value.trim();
 
-      const cloudConfig = {
-        provider,
-        url: document.getElementById('set-cloud-url').value,
-        username: document.getElementById('set-cloud-username').value,
-        password: document.getElementById('set-cloud-password').value
-      };
+      if (!username || !password) {
+        Utils.toast('请填写完整的坚果云信息');
+        return;
+      }
 
       if (user) {
-        user.cloudConfig = cloudConfig;
-        Store.saveUsers(Store.getUsers());
+        user.cloudConfig = {
+          provider: 'webdav',
+          proxyUrl: 'http://localhost:3001/proxy',
+          username,
+          password
+        };
+        // 保存到用户列表
+        const users = Store.getUsers().map(u =>
+          u.id === user.id ? user : u
+        );
+        Store.saveUsers(users);
         authService.setCurrentUser(user);
         Utils.toast('云盘配置已保存');
       }
-    };
-
-    // 云盘配置输入变化时自动保存
-    ['set-cloud-url', 'set-cloud-username', 'set-cloud-password'].forEach(id => {
-      document.getElementById(id).addEventListener('change', saveCloudConfig);
     });
 
     // 创建空间

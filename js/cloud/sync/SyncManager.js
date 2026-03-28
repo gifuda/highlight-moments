@@ -1,6 +1,6 @@
 /* ============================================
    同步管理器
-   管理本地与云盘之间的同步
+   管理本地 localStorage 与坚果云 WebDAV 之间的同步
    ============================================ */
 
 class SyncManager {
@@ -8,116 +8,97 @@ class SyncManager {
     this.provider = null;
     this.syncing = false;
     this.lastSync = null;
-    this.spaces = [];
   }
 
-  /* 初始化同步管理器 */
+  /* 初始化：读取用户云盘配置，创建 Provider */
   async init() {
     const user = authService.getCurrentUser();
-    if (!user?.cloudConfig?.provider) {
-      return;
+    if (!user?.cloudConfig?.username) return;
+
+    try {
+      this.provider = new WebDAVProvider(user.cloudConfig);
+      this.lastSync = localStorage.getItem('hl_last_sync');
+    } catch (err) {
+      console.warn('SyncManager 初始化失败:', err.message);
     }
-
-    const providerClass = authService.cloudProviders[user.cloudConfig.provider];
-    if (!providerClass) {
-      throw new Error('不支持的云盘类型');
-    }
-
-    this.provider = new providerClass(user.cloudConfig);
-    await this.provider.init();
-    this.lastSync = await this.provider.getLastSyncTime();
-
-    // 加载用户的空间
-    this.spaces = invitationService.getUserSpaces(user.id);
   }
 
-  /* 同步记录到云盘 */
-  async syncRecords() {
-    if (this.syncing) return;
+  /* 上传本地记录到坚果云 */
+  async pushRecords() {
+    if (!this.provider || this.syncing) return;
     this.syncing = true;
 
     try {
+      await this.provider.ensureBaseDir();
       const records = Store.getRecords();
       for (const record of records) {
         await this.provider.saveRecord(record);
       }
       this.lastSync = new Date().toISOString();
-      await this.provider.setLastSyncTime(this.lastSync);
-      Utils.toast('记录已同步到云盘');
+      localStorage.setItem('hl_last_sync', this.lastSync);
+      Utils.toast(`${records.length} 条记录已同步到坚果云`);
     } catch (err) {
-      Utils.toast('同步失败: ' + err.message);
+      Utils.toast('上传失败: ' + err.message);
     } finally {
       this.syncing = false;
     }
   }
 
-  /* 同步媒体文件到云盘 */
-  async syncMedia() {
-    if (this.syncing) return;
+  /* 从坚果云拉取记录到本地 */
+  async pullRecords() {
+    if (!this.provider || this.syncing) return;
     this.syncing = true;
 
     try {
-      // 获取所有记录的附件
-      const records = Store.getRecords();
-      for (const record of records) {
-        if (record.attachments) {
-          for (const att of record.attachments) {
-            const blob = await Store.getBlob(att.mediaId);
-            if (blob) {
-              await this.provider.saveMedia(att.id, blob, att.type);
-            }
-          }
-        }
+      const cloudRecords = await this.provider.getAllRecords();
+      const localRecords = Store.getRecords();
+
+      // 合并策略：以 id 为准，云端有的覆盖本地，本地独有的保留
+      const localMap = new Map(localRecords.map(r => [r.id, r]));
+      for (const cloudRecord of cloudRecords) {
+        localMap.set(cloudRecord.id, cloudRecord);
       }
-      Utils.toast('媒体文件已同步到云盘');
+
+      const merged = Array.from(localMap.values());
+      localStorage.setItem(Store.LS_RECORDS, JSON.stringify(merged));
+
+      this.lastSync = new Date().toISOString();
+      localStorage.setItem('hl_last_sync', this.lastSync);
+      Utils.toast(`已从坚果云拉取 ${cloudRecords.length} 条记录`);
     } catch (err) {
-      Utils.toast('媒体同步失败: ' + err.message);
+      Utils.toast('拉取失败: ' + err.message);
     } finally {
       this.syncing = false;
     }
   }
 
-  /* 同步空间数据 */
-  async syncSpaces() {
-    if (this.syncing) return;
-    this.syncing = true;
-
-    try {
-      const spaces = invitationService.getUserSpaces(authService.getCurrentUser().id);
-      for (const space of spaces) {
-        await this.provider.saveSpace(space);
-      }
-      Utils.toast('空间数据已同步到云盘');
-    } catch (err) {
-      Utils.toast('空间同步失败: ' + err.message);
-    } finally {
-      this.syncing = false;
-    }
-  }
-
-  /* 完整同步（记录 + 媒体 + 空间） */
+  /* 完整双向同步 */
   async fullSync() {
-    await this.syncRecords();
-    await this.syncMedia();
-    await this.syncSpaces();
+    if (!this.provider) {
+      Utils.toast('请先配置坚果云');
+      return;
+    }
+
+    // 先拉取云端数据
+    await this.pullRecords();
+    // 再推送本地数据
+    await this.pushRecords();
+
+    // 刷新时间轴
+    if (typeof Timeline !== 'undefined') {
+      Timeline.render();
+    }
   }
 
   /* 检查是否需要同步 */
   needsSync() {
     if (!this.provider) return false;
     if (this.syncing) return false;
-
-    const lastSync = this.lastSync;
-    if (!lastSync) return true;
-
-    const now = new Date();
-    const lastSyncDate = new Date(lastSync);
-    const hoursSinceLastSync = (now - lastSyncDate) / (1000 * 60 * 60);
-
-    return hoursSinceLastSync > 1; // 每小时同步一次
+    if (!this.lastSync) return true;
+    const hoursSince = (Date.now() - new Date(this.lastSync).getTime()) / (1000 * 60 * 60);
+    return hoursSince > 1;
   }
 
-  /* 获取最后同步时间 */
   getLastSync() {
     return this.lastSync;
   }

@@ -18,6 +18,14 @@ const ASSETS = [
   '/js/editor.js',
   '/js/app.js',
   '/js/settings.js',
+  '/js/cloud/providers/CloudProvider.js',
+  '/js/cloud/providers/WebDAVProvider.js',
+  '/js/cloud/auth/AuthService.js',
+  '/js/cloud/sharing/InvitationService.js',
+  '/js/cloud/sync/SyncManager.js',
+  '/js/user/UserService.js',
+  '/js/user/register.js',
+  '/js/user/login.js',
   '/manifest.json'
 ];
 
