@@ -16,6 +16,7 @@ const Settings = {
     }
 
     const recordCount = Store.getRecords().length;
+    const currentPreset = user?.cloudConfig?.preset || '';
 
     container.innerHTML = `
       <div class="page">
@@ -63,7 +64,7 @@ const Settings = {
           </p>
 
           <div id="cloud-provider-cards" style="display:flex; flex-direction:column; gap:8px;">
-            <div class="cloud-card ${!user?.cloudConfig?.provider ? 'active' : ''}" data-type="" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid ${!user?.cloudConfig?.provider ? '#007AFF' : 'var(--border-color)'}; cursor:pointer;">
+            <div class="cloud-card" data-type="" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid #E5E5EA; cursor:pointer;">
               <div style="width:36px; height:36px; border-radius:8px; background:#F5F5F7; display:flex; align-items:center; justify-content:center; font-size:18px;">📱</div>
               <div style="flex:1;">
                 <div style="font-weight:600; font-size:15px;">仅存本地</div>
@@ -71,7 +72,7 @@ const Settings = {
               </div>
             </div>
 
-            <div class="cloud-card ${user?.cloudConfig?.preset === 'jianguoyun' ? 'active' : ''}" data-type="jianguoyun" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid ${user?.cloudConfig?.preset === 'jianguoyun' ? '#007AFF' : 'var(--border-color)'}; cursor:pointer;">
+            <div class="cloud-card" data-type="jianguoyun" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid #E5E5EA; cursor:pointer;">
               <div style="width:36px; height:36px; border-radius:8px; background:#E8F5E9; display:flex; align-items:center; justify-content:center; font-size:18px;">🥜</div>
               <div style="flex:1;">
                 <div style="font-weight:600; font-size:15px;">坚果云</div>
@@ -79,7 +80,7 @@ const Settings = {
               </div>
             </div>
 
-            <div class="cloud-card ${user?.cloudConfig?.preset === 'nextcloud' ? 'active' : ''}" data-type="nextcloud" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid ${user?.cloudConfig?.preset === 'nextcloud' ? '#007AFF' : 'var(--border-color)'}; cursor:pointer;">
+            <div class="cloud-card" data-type="nextcloud" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid #E5E5EA; cursor:pointer;">
               <div style="width:36px; height:36px; border-radius:8px; background:#E3F2FD; display:flex; align-items:center; justify-content:center; font-size:18px;">☁️</div>
               <div style="flex:1;">
                 <div style="font-weight:600; font-size:15px;">Nextcloud / ownCloud</div>
@@ -87,7 +88,7 @@ const Settings = {
               </div>
             </div>
 
-            <div class="cloud-card ${user?.cloudConfig?.preset === 'synology' ? 'active' : ''}" data-type="synology" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid ${user?.cloudConfig?.preset === 'synology' ? '#007AFF' : 'var(--border-color)'}; cursor:pointer;">
+            <div class="cloud-card" data-type="synology" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid #E5E5EA; cursor:pointer;">
               <div style="width:36px; height:36px; border-radius:8px; background:#FFF3E0; display:flex; align-items:center; justify-content:center; font-size:18px;">💾</div>
               <div style="flex:1;">
                 <div style="font-weight:600; font-size:15px;">群晖 NAS</div>
@@ -95,66 +96,90 @@ const Settings = {
               </div>
             </div>
 
-            <div class="cloud-card ${user?.cloudConfig?.preset === 'custom' ? 'active' : ''}" data-type="custom" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid ${user?.cloudConfig?.preset === 'custom' ? '#007AFF' : 'var(--border-color)'}; cursor:pointer;">
+            <div class="cloud-card" data-type="custom" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid #E5E5EA; cursor:pointer;">
               <div style="width:36px; height:36px; border-radius:8px; background:#F3E5F5; display:flex; align-items:center; justify-content:center; font-size:18px;">🔌</div>
               <div style="flex:1;">
                 <div style="font-weight:600; font-size:15px;">其他 WebDAV</div>
-                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">百度网盘、夸克网盘等支持 WebDAV 的服务</div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">任意支持 WebDAV 协议的服务</div>
               </div>
             </div>
           </div>
 
           <!-- 配置表单区域 -->
-          <div id="cloud-config-form" style="margin-top:16px; display:${user?.cloudConfig?.provider ? 'block' : 'none'};">
+          <div id="cloud-config-form" style="margin-top:16px; display:none;">
 
-            <!-- 服务器地址（nextcloud/synology/custom） -->
-            <div class="settings-row cloud-field" data-for="nextcloud,synology,custom" style="display:${['nextcloud','synology','custom'].includes(user?.cloudConfig?.preset) ? 'flex' : 'none'};">
-              <span class="settings-label">服务器地址</span>
+            <!-- 坚果云引导 -->
+            <div class="cloud-field" data-for="jianguoyun" style="display:none; background:#F0F9F0; border-radius:10px; padding:14px; margin-bottom:12px;">
+              <div style="font-size:13px; font-weight:600; margin-bottom:8px;">如何获取坚果云 API 接口信息</div>
+              <div style="font-size:12px; color:var(--text-secondary); line-height:1.8;">
+                1. 登录坚果云网页版 → 右上角头像 → <strong>安全选项</strong><br>
+                2. 找到「<strong>第三方应用管理</strong>」→ 添加应用<br>
+                3. 生成一个 <strong>应用专用密码</strong>（不是登录密码）<br>
+                4. 本地启动中转服务：<code style="background:#E8E8E8; padding:2px 6px; border-radius:4px;">node server/proxy.js</code><br>
+                5. 将邮箱作为 API 账号，应用密码作为 API 密钥填入下方
+              </div>
+            </div>
+
+            <!-- Nextcloud 引导 -->
+            <div class="cloud-field" data-for="nextcloud" style="display:none; background:#F0F4FF; border-radius:10px; padding:14px; margin-bottom:12px;">
+              <div style="font-size:13px; font-weight:600; margin-bottom:8px;">如何获取 Nextcloud API 接口信息</div>
+              <div style="font-size:12px; color:var(--text-secondary); line-height:1.8;">
+                1. 登录 Nextcloud → 设置 → <strong>安全</strong><br>
+                2. 创建一个 <strong>应用密码</strong><br>
+                3. WebDAV 地址格式：<code style="background:#E8E8E8; padding:2px 6px; border-radius:4px;">https://你的域名/remote.php/dav/files/用户名/</code><br>
+                4. 将 WebDAV 地址填入下方，用户名和应用密码作为 API 密钥
+              </div>
+            </div>
+
+            <!-- 群晖引导 -->
+            <div class="cloud-field" data-for="synology" style="display:none; background:#FFF8E1; border-radius:10px; padding:14px; margin-bottom:12px;">
+              <div style="font-size:13px; font-weight:600; margin-bottom:8px;">如何获取群晖 WebDAV API 接口信息</div>
+              <div style="font-size:12px; color:var(--text-secondary); line-height:1.8;">
+                1. DSM 控制面板 → <strong>WebDAV</strong> → 启用<br>
+                2. WebDAV 地址格式：<code style="background:#E8E8E8; padding:2px 6px; border-radius:4px;">https://你的IP:5006/</code><br>
+                3. 使用 DSM 账号或创建专用账号的应用令牌
+              </div>
+            </div>
+
+            <!-- 自定义引导 -->
+            <div class="cloud-field" data-for="custom" style="display:none; background:#F8F0FF; border-radius:10px; padding:14px; margin-bottom:12px;">
+              <div style="font-size:13px; font-weight:600; margin-bottom:8px;">如何获取 WebDAV API 接口信息</div>
+              <div style="font-size:12px; color:var(--text-secondary); line-height:1.8;">
+                1. 在你的网盘/私有云服务中启用 <strong>WebDAV</strong> 功能<br>
+                2. 获取 WebDAV 服务的 <strong>API 地址</strong>（通常在帮助文档中）<br>
+                3. 生成一个 <strong>访问令牌</strong> 或应用专用密钥<br>
+                4. 将 API 地址和令牌填入下方
+              </div>
+            </div>
+
+            <!-- API 地址（nextcloud/synology/custom） -->
+            <div class="settings-row cloud-field" data-for="nextcloud,synology,custom" style="display:none;">
+              <span class="settings-label">API 地址</span>
               <input type="url" class="settings-input" id="set-cloud-server" placeholder="https://your-server.com/dav/" value="${user?.cloudConfig?.serverUrl || ''}">
             </div>
 
             <!-- 坚果云：代理地址 -->
-            <div class="settings-row cloud-field" data-for="jianguoyun" style="display:${user?.cloudConfig?.preset === 'jianguoyun' ? 'flex' : 'none'};">
-              <span class="settings-label">代理地址</span>
+            <div class="settings-row cloud-field" data-for="jianguoyun" style="display:none;">
+              <span class="settings-label">代理服务地址</span>
               <input type="url" class="settings-input" id="set-cloud-proxy" placeholder="http://localhost:3001/proxy" value="${user?.cloudConfig?.proxyUrl || 'http://localhost:3001/proxy'}">
             </div>
 
-            <!-- 账号 -->
-            <div class="settings-row cloud-field" data-for="jianguoyun,nextcloud,synology,custom">
-              <span class="settings-label">账号 / 邮箱</span>
-              <input type="text" class="settings-input" id="set-cloud-username" placeholder="your@email.com" value="${user?.cloudConfig?.username || ''}">
+            <!-- API 账号 -->
+            <div class="settings-row cloud-field" data-for="jianguoyun,nextcloud,synology,custom" style="display:none;">
+              <span class="settings-label">API 账号</span>
+              <input type="text" class="settings-input" id="set-cloud-username" placeholder="应用账号或邮箱" value="${user?.cloudConfig?.username || ''}">
             </div>
 
-            <!-- 密码 -->
-            <div class="settings-row cloud-field" data-for="jianguoyun,nextcloud,synology,custom">
-              <span class="settings-label">密码</span>
-              <input type="password" class="settings-input" id="set-cloud-password" placeholder="应用密码" value="${user?.cloudConfig?.password || ''}">
-            </div>
-
-            <!-- 坚果云提示 -->
-            <div class="cloud-field" data-for="jianguoyun" style="display:${user?.cloudConfig?.preset === 'jianguoyun' ? 'block' : 'none'}; background:#F5F5F7; border-radius:8px; padding:10px 12px; margin:6px 0;">
-              <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
-                <strong>操作步骤：</strong><br>
-                1. 在坚果云「设置 → 安全选项 → 第三方应用管理」添加应用，生成密码<br>
-                2. 本地运行中转服务（需要 Node.js）<br>
-                3. 填入邮箱和生成的应用密码
-              </div>
-            </div>
-
-            <!-- Nextcloud/群晖/自定义提示 -->
-            <div class="cloud-field" data-for="nextcloud,synology,custom" style="display:${['nextcloud','synology','custom'].includes(user?.cloudConfig?.preset) ? 'block' : 'none'}; background:#F5F5F7; border-radius:8px; padding:10px 12px; margin:6px 0;">
-              <div style="font-size:12px; color:var(--text-secondary); line-height:1.5;">
-                <strong>操作步骤：</strong><br>
-                1. 确保服务器已开启 WebDAV 服务<br>
-                2. 填入服务器 WebDAV 地址和登录凭据<br>
-                3. 如遇跨域问题，可在本地运行代理服务
-              </div>
+            <!-- API 密钥 -->
+            <div class="settings-row cloud-field" data-for="jianguoyun,nextcloud,synology,custom" style="display:none;">
+              <span class="settings-label">API 密钥</span>
+              <input type="password" class="settings-input" id="set-cloud-password" placeholder="应用专用密码或访问令牌" value="${user?.cloudConfig?.password || ''}">
             </div>
 
             <!-- 可选代理（非坚果云） -->
-            <div class="settings-row cloud-field" data-for="nextcloud,synology,custom" style="display:${['nextcloud','synology','custom'].includes(user?.cloudConfig?.preset) ? 'flex' : 'none'};">
+            <div class="settings-row cloud-field" data-for="nextcloud,synology,custom" style="display:none;">
               <span class="settings-label">代理地址（选填）</span>
-              <input type="url" class="settings-input" id="set-cloud-proxy-general" placeholder="留空则直连服务器" value="${user?.cloudConfig?.proxyUrl || ''}">
+              <input type="url" class="settings-input" id="set-cloud-proxy-general" placeholder="遇跨域问题时填写" value="${user?.cloudConfig?.proxyUrl || ''}">
             </div>
 
             <div style="display:flex; gap:10px; margin-top:12px;">
@@ -241,6 +266,8 @@ const Settings = {
       </div>
     `;
 
+    // ===== 事件绑定 =====
+
     // 修改空间名称
     container.querySelector('#set-space-name').addEventListener('change', e => {
       config.spaceName = e.target.value.trim() || '高光时刻';
@@ -257,26 +284,48 @@ const Settings = {
       Router.navigate('/login');
     });
 
-    // 云盘卡片选择
+    // ===== 云盘卡片选择 =====
+    const _highlightCard = (type) => {
+      container.querySelectorAll('.cloud-card').forEach(c => {
+        if (c.dataset.type === type) {
+          c.style.borderColor = '#007AFF';
+          c.style.background = '#F0F5FF';
+        } else {
+          c.style.borderColor = '#E5E5EA';
+          c.style.background = 'transparent';
+        }
+      });
+    };
+
+    // 初始化高亮
+    if (currentPreset) {
+      _highlightCard(currentPreset);
+      document.getElementById('cloud-config-form').style.display = 'block';
+      _showFieldsFor(currentPreset);
+    } else {
+      _highlightCard('');
+    }
+
+    function _showFieldsFor(preset) {
+      container.querySelectorAll('.cloud-field').forEach(field => {
+        const forTypes = field.dataset.for?.split(',') || [];
+        field.style.display = forTypes.includes(preset) ? 'block' : 'none';
+        // settings-row 需要 flex
+        if (forTypes.includes(preset) && field.classList.contains('settings-row')) {
+          field.style.display = 'flex';
+        }
+      });
+    }
+
     container.querySelectorAll('.cloud-card').forEach(card => {
       card.addEventListener('click', () => {
         const preset = card.dataset.type;
-        // 高亮当前卡片
-        container.querySelectorAll('.cloud-card').forEach(c => {
-          c.style.borderColor = 'var(--border-color)';
-          c.classList.remove('active');
-        });
-        card.style.borderColor = '#007AFF';
-        card.classList.add('active');
-        // 显示/隐藏配置表单
+        _highlightCard(preset);
+
         const form = document.getElementById('cloud-config-form');
         form.style.display = preset ? 'block' : 'none';
-        // 显示对应字段
-        container.querySelectorAll('.cloud-field').forEach(field => {
-          const forTypes = field.dataset.for?.split(',') || [];
-          const show = forTypes.includes(preset);
-          field.style.display = show ? (field.tagName === 'P' || field.tagName === 'DIV' ? 'block' : 'flex') : 'none';
-        });
+
+        if (preset) _showFieldsFor(preset);
       });
     });
 
@@ -318,10 +367,15 @@ const Settings = {
       }
     });
 
-    /* 从表单构建云盘配置 */
     function _buildCloudConfig() {
-      const activeCard = container.querySelector('.cloud-card.active');
-      const preset = activeCard?.dataset.type || '';
+      // 从高亮的卡片获取类型
+      const activeCard = container.querySelector('.cloud-card[style*="border-color: rgb(0, 122, 255)"], .cloud-card[style*="#007AFF"]');
+      // 更可靠的方式：遍历找 borderColor 不是 #E5E5EA 的
+      let preset = '';
+      container.querySelectorAll('.cloud-card').forEach(c => {
+        if (c.style.borderColor !== '#E5E5EA') preset = c.dataset.type;
+      });
+
       if (!preset) {
         Utils.toast('请先选择云盘类型');
         return null;
@@ -330,39 +384,27 @@ const Settings = {
       const username = document.getElementById('set-cloud-username').value.trim();
       const password = document.getElementById('set-cloud-password').value.trim();
       if (!username || !password) {
-        Utils.toast('请填写账号和密码');
+        Utils.toast('请填写 API 账号和密钥');
         return null;
       }
 
-      const config = {
-        provider: 'webdav',
-        preset,
-        username,
-        password
-      };
+      const cfg = { provider: 'webdav', preset, username, password };
 
-      // 根据类型填充服务器地址
       if (preset === 'jianguoyun') {
-        config.serverUrl = 'https://dav.jianguoyun.com/dav';
-        config.proxyUrl = document.getElementById('set-cloud-proxy').value.trim() || 'http://localhost:3001/proxy';
-      } else if (preset === 'nextcloud') {
-        config.serverUrl = document.getElementById('set-cloud-server').value.trim();
-        config.proxyUrl = document.getElementById('set-cloud-proxy-general').value.trim();
-        if (!config.serverUrl) { Utils.toast('请填写 Nextcloud 服务器地址'); return null; }
-      } else if (preset === 'synology') {
-        config.serverUrl = document.getElementById('set-cloud-server').value.trim();
-        config.proxyUrl = document.getElementById('set-cloud-proxy-general').value.trim();
-        if (!config.serverUrl) { Utils.toast('请填写群晖服务器地址'); return null; }
-      } else if (preset === 'custom') {
-        config.serverUrl = document.getElementById('set-cloud-server').value.trim();
-        config.proxyUrl = document.getElementById('set-cloud-proxy-general').value.trim();
-        if (!config.serverUrl) { Utils.toast('请填写 WebDAV 服务器地址'); return null; }
+        cfg.serverUrl = 'https://dav.jianguoyun.com/dav';
+        cfg.proxyUrl = document.getElementById('set-cloud-proxy').value.trim() || 'http://localhost:3001/proxy';
+      } else {
+        cfg.serverUrl = document.getElementById('set-cloud-server')?.value.trim() || '';
+        cfg.proxyUrl = document.getElementById('set-cloud-proxy-general')?.value.trim() || '';
+        if (!cfg.serverUrl) {
+          Utils.toast('请填写 API 地址');
+          return null;
+        }
       }
 
-      return config;
+      return cfg;
     }
 
-    /* 将用户配置转为 WebDAVProvider 构造参数 */
     function _toProviderConfig(cloudConfig) {
       return {
         serverUrl: cloudConfig.serverUrl,
@@ -379,7 +421,6 @@ const Settings = {
 
       try {
         const space = invitationService.createSpace(spaceName, user.id);
-        // 确保 config 存在
         if (!Store.getConfig()) {
           Store.saveConfig({
             version: '1.0.0',
