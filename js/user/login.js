@@ -39,8 +39,7 @@ const Login = {
         authService.setCurrentUser(user);
         Utils.toast('登录成功！');
         // 登录后判断是否有空间
-        const user = authService.getCurrentUser();
-        const spaces = invitationService.getUserSpaces(user?.id || '');
+        const spaces = invitationService.getUserSpaces(user.id);
         if (spaces.length === 0 && !Store.getConfig()) {
           Router.navigate('/join');
         } else {
