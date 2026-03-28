@@ -1,11 +1,17 @@
 /* ============================================
    用户注册页面
    实现手机号注册和登录
+   支持填写邀请码直接加入空间
    ============================================ */
 
 const Register = {
   render() {
     const container = document.getElementById('app-container');
+
+    // 检查 URL 是否带了邀请码参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const prefillCode = urlParams.get('code') || '';
+
     container.innerHTML = `
       <div class="page">
         <h2 style="font-size:22px; font-weight:600; margin-bottom:20px;">用户注册</h2>
@@ -38,6 +44,13 @@ const Register = {
           </div>
         </div>
 
+        <div class="settings-section">
+          <h3>邀请码 <span style="font-weight:400; color:var(--text-secondary);">（选填）</span></h3>
+          <div class="settings-row">
+            <input type="text" class="settings-input" id="reg-invite-code" placeholder="有邀请码？粘贴到这里" value="${prefillCode}">
+          </div>
+        </div>
+
         <button class="btn-primary" id="btn-register" style="width:100%; margin-top:20px;">注册</button>
         <div style="text-align:center; margin-top:20px;">
           <button class="btn-secondary" id="btn-login" style="padding:10px 20px;">已有账号？登录</button>
@@ -58,6 +71,7 @@ const Register = {
       const phone = document.getElementById('reg-phone').value.trim();
       const name = document.getElementById('reg-name').value.trim();
       const color = container.querySelector('.color-dot.selected').dataset.color;
+      const inviteCode = document.getElementById('reg-invite-code').value.trim();
 
       if (!phone || !name) {
         Utils.toast('请填写完整的注册信息');
@@ -66,10 +80,22 @@ const Register = {
 
       try {
         const user = await userService.register(phone, name, color);
-        // 同步到 authService，确保全局一致
         authService.setCurrentUser(user);
-        Utils.toast('注册成功！');
-        Router.navigate('/join');
+
+        // 如果填了邀请码，直接加入空间
+        if (inviteCode) {
+          try {
+            invitationService.joinSpace(inviteCode, user.id);
+            Utils.toast('注册成功，已加入空间！');
+            Router.navigate('/');
+          } catch (err) {
+            Utils.toast('注册成功，但邀请码无效: ' + err.message);
+            Router.navigate('/join');
+          }
+        } else {
+          Utils.toast('注册成功！');
+          Router.navigate('/join');
+        }
       } catch (err) {
         Utils.toast('注册失败: ' + err.message);
       }

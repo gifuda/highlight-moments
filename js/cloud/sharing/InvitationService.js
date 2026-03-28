@@ -1,61 +1,83 @@
 /* ============================================
    邀请服务
    管理空间邀请和成员审核
+
+   邀请码格式：自包含，编码了 spaceId + spaceName
+   其他设备无需查数据库即可解析加入
    ============================================ */
 
 class InvitationService {
   constructor() {
-    this.invitations = [];
     this.spaces = [];
   }
 
-  /* 创建邀请码 */
-  createInvitation(spaceId, creatorId, maxUses = 1) {
-    const invitation = {
-      id: Utils.uuid(),
-      spaceId,
-      creatorId,
-      code: this._generateInvitationCode(),
-      maxUses,
-      currentUses: 0,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7天后过期
-      status: 'active'
-    };
-
-    const invitations = Store.getInvitations();
-    invitations.push(invitation);
-    Store.saveInvitations(invitations);
-    return invitation;
+  /* 生成自包含邀请码（把空间信息编码进去，跨设备可用） */
+  generateInviteCode(spaceId, spaceName) {
+    const payload = JSON.stringify({ s: spaceId, n: spaceName });
+    // 用 base64 编码，去掉可能的 = 填充
+    return btoa(unescape(encodeURIComponent(payload)))
+      .replace(/=/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_');
   }
 
-  /* 生成邀请码 */
-  _generateInvitationCode() {
-    return Math.random().toString(36).substring(2, 10).toUpperCase();
+  /* 解析邀请码，返回 { spaceId, spaceName } 或 null */
+  parseInviteCode(code) {
+    try {
+      // 还原 base64 标准字符
+      let normalized = code.replace(/-/g, '+').replace(/_/g, '/');
+      // 补齐 base64 填充
+      while (normalized.length % 4 !== 0) normalized += '=';
+      const json = decodeURIComponent(escape(atob(normalized)));
+      const data = JSON.parse(json);
+      if (!data.s || !data.n) return null;
+      return { spaceId: data.s, spaceName: data.n };
+    } catch {
+      return null;
+    }
   }
 
-  /* 使用邀请码 */
-  useInvitation(code) {
-    const invitations = Store.getInvitations();
-    const invitationIndex = invitations.findIndex(i =>
-      i.code === code &&
-      i.status === 'active' &&
-      i.currentUses < i.maxUses &&
-      new Date(i.expiresAt) > new Date()
-    );
-
-    if (invitationIndex === -1) {
-      throw new Error('无效的邀请码或已过期');
+  /* 使用邀请码加入空间（自包含，不需要查数据库） */
+  joinSpace(code, userId) {
+    const info = this.parseInviteCode(code);
+    if (!info) {
+      throw new Error('无效的邀请码');
     }
 
-    const invitation = invitations[invitationIndex];
-    invitation.currentUses++;
-    if (invitation.currentUses >= invitation.maxUses) {
-      invitation.status = 'used';
+    // 本地创建或查找空间
+    let space = Store.getSpace(info.spaceId);
+    if (!space) {
+      // 在本地创建这个空间的记录
+      space = {
+        id: info.spaceId,
+        name: info.spaceName,
+        creatorId: null, // 被邀请者不知道创建者 ID
+        members: [],
+        createdAt: new Date().toISOString(),
+        cloudConfig: null
+      };
+      const spaces = Store.getSpaces();
+      spaces.push(space);
+      Store.saveSpaces(spaces);
     }
 
-    Store.saveInvitations(invitations);
-    return invitation;
+    // 添加自己为成员
+    if (!space.members.includes(userId)) {
+      this.addMember(space.id, userId);
+    }
+
+    // 设置 config
+    if (!Store.getConfig()) {
+      Store.saveConfig({
+        version: '1.0.0',
+        spaceName: info.spaceName,
+        authors: [],
+        currentAuthor: userId,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    return space;
   }
 
   /* 创建空间 */
@@ -96,36 +118,6 @@ class InvitationService {
   getUserSpaces(userId) {
     const spaces = Store.getSpaces();
     return spaces.filter(s => s.members.includes(userId));
-  }
-
-  /* 获取邀请码 */
-  getInvitation(code) {
-    return Store.getInvitation(code);
-  }
-
-  /* 获取空间的所有邀请码 */
-  getSpaceInvitations(spaceId) {
-    return Store.getInvitations().filter(i => i.spaceId === spaceId && i.status === 'active');
-  }
-
-  /* 获取用户创建的邀请码 */
-  getUserInvitations(userId) {
-    return Store.getInvitations().filter(i => i.creatorId === userId);
-  }
-
-  /* 获取所有邀请码 */
-  getAllInvitations() {
-    return Store.getInvitations();
-  }
-
-  /* 清理过期的邀请码 */
-  cleanupExpiredInvitations() {
-    const now = new Date();
-    const invitations = Store.getInvitations().filter(i => {
-      const expires = new Date(i.expiresAt);
-      return expires > now;
-    });
-    Store.saveInvitations(invitations);
   }
 }
 

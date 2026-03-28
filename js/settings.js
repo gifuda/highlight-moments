@@ -102,20 +102,16 @@ const Settings = {
         <div class="settings-section">
           <h3>邀请管理</h3>
           <div id="settings-invitations">
-            ${spaces.length > 0 ? invitationService.getSpaceInvitations(spaces[0]?.id || '').map(i => `
-              <div class="invitation-item">
-                <div class="invitation-code">${i.code}</div>
-                <div class="invitation-info">
-                  <span>可用次数: ${i.maxUses - i.currentUses}/${i.maxUses}</span>
-                  <span>有效期至: ${Utils.formatDateTime(i.expiresAt)}</span>
+            ${spaces.length > 0 ? (() => {
+              const code = invitationService.generateInviteCode(spaces[0].id, spaces[0].name);
+              return `
+                <div class="invitation-item">
+                  <div class="invitation-code" style="word-break:break-all; font-size:13px; letter-spacing:1px;">${code}</div>
+                  <button class="btn-secondary" data-code="${code}" style="margin-top:8px;">复制邀请码</button>
                 </div>
-                <button class="btn-secondary" data-code="${i.code}">复制</button>
-              </div>
-            `).join('') : ''}
+              `;
+            })() : '<p style="color:var(--text-secondary); font-size:13px;">请先创建空间</p>'}
           </div>
-          ${spaces.length > 0 ? `
-            <button class="btn-primary" id="btn-create-invitation" style="margin-top:10px;">生成新邀请码</button>
-          ` : ''}
         </div>
 
         <div class="settings-section">
@@ -248,22 +244,6 @@ const Settings = {
         Settings.render();
       } catch (err) {
         Utils.toast('创建空间失败: ' + err.message);
-      }
-    });
-
-    // 生成邀请码
-    container.querySelector('#btn-create-invitation').addEventListener('click', async () => {
-      if (spaces.length === 0) {
-        Utils.toast('请先创建空间');
-        return;
-      }
-
-      try {
-        const invitation = invitationService.createInvitation(spaces[0].id, user.id);
-        Utils.toast(`邀请码生成成功: ${invitation.code}`);
-        Settings.render(); // 重新渲染设置页面
-      } catch (err) {
-        Utils.toast('生成邀请码失败: ' + err.message);
       }
     });
 
