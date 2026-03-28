@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#F5F5F7">
+  <title>高光时刻</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/editor.css">
+</head>
+<body>
+
+  <!-- 顶部栏 -->
+  <header class="app-header">
+    <h1 class="header-title" id="header-title">高光时刻</h1>
+    <button class="icon-btn" id="btn-settings" title="设置">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="app-main" id="app-container">
+    <!-- 页面内容会由 JS 动态渲染到这里 -->
+  </main>
+
+  <!-- 底部导航栏 -->
+  <nav class="app-nav">
+    <button class="nav-item active" data-route="/">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <span>时间轴</span>
+    </button>
+    <button class="nav-item nav-add" data-route="/new">
+      <div class="nav-add-btn">+</div>
+    </button>
+    <button class="nav-item" data-route="/settings">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      <span>我的</span>
+    </button>
+  </nav>
+
+  <!-- 全屏图片查看器（默认隐藏） -->
+  <div class="viewer-overlay" id="viewer-overlay">
+    <button class="viewer-close" id="viewer-close">&times;</button>
+    <img class="viewer-img" id="viewer-img" src="" alt="">
+  </div>
+
+  <!-- JS 文件按顺序加载 -->
+  <!-- 基础工具 -->
+  <script src="js/utils.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/record.js"></script>
+  <script src="js/media.js"></script>
+  <script src="js/router.js"></script>
+
+  <!-- 云盘模块（必须在 app.js 之前） -->
+  <script src="js/cloud/providers/CloudProvider.js"></script>
+  <script src="js/cloud/providers/WebDAVProvider.js"></script>
+  <script src="js/cloud/auth/AuthService.js"></script>
+  <script src="js/cloud/sharing/InvitationService.js"></script>
+  <script src="js/cloud/sync/SyncManager.js"></script>
+
+  <!-- 用户模块 -->
+  <script src="js/user/UserService.js"></script>
+  <script src="js/user/register.js"></script>
+  <script src="js/user/login.js"></script>
+
+  <!-- 页面模块 -->
+  <script src="js/timeline.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/settings.js"></script>
+
+  <!-- 应用入口（最后加载） -->
+  <script src="js/app.js"></script>
+</body>
+</html>
