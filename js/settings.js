@@ -57,22 +57,68 @@ const Settings = {
         </div>
 
         <div class="settings-section">
-          <h3>云盘设置（坚果云）</h3>
+          <h3>云盘同步</h3>
           <p style="font-size:13px; color:var(--text-secondary); margin-bottom:10px;">
-            连接坚果云实现多人数据互通。需要先在坚果云「安全选项 → 第三方应用管理」中生成应用密码。
+            绑定云盘后可实现多人数据互通。不绑定也可以正常使用，数据仅存本地。
           </p>
-          <div class="settings-row">
-            <span class="settings-label">坚果云邮箱</span>
-            <input type="email" class="settings-input" id="set-cloud-username" placeholder="your@email.com" value="${user?.cloudConfig?.username || ''}">
+
+          <div class="settings-row" style="flex-direction:column; align-items:stretch;">
+            <label class="settings-label" style="margin-bottom:6px;">选择云盘类型</label>
+            <select id="set-cloud-type" style="padding:10px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-primary); font-size:15px; width:100%;">
+              <option value="" ${!user?.cloudConfig?.provider ? 'selected' : ''}>不同步（仅本地存储）</option>
+              <option value="jianguoyun" ${user?.cloudConfig?.preset === 'jianguoyun' ? 'selected' : ''}>坚果云</option>
+              <option value="nextcloud" ${user?.cloudConfig?.preset === 'nextcloud' ? 'selected' : ''}>Nextcloud / ownCloud</option>
+              <option value="synology" ${user?.cloudConfig?.preset === 'synology' ? 'selected' : ''}>群晖 WebDAV</option>
+              <option value="custom" ${user?.cloudConfig?.preset === 'custom' ? 'selected' : ''}>自定义 WebDAV（私有云等）</option>
+            </select>
           </div>
-          <div class="settings-row">
-            <span class="settings-label">应用密码</span>
-            <input type="password" class="settings-input" id="set-cloud-password" placeholder="第三方应用密码" value="${user?.cloudConfig?.password || ''}">
+
+          <div id="cloud-config-form" style="margin-top:12px; display:${user?.cloudConfig?.provider ? 'block' : 'none'};">
+            <!-- WebDAV 服务器地址（仅 nextcloud/synology/custom 显示） -->
+            <div class="settings-row cloud-field" data-for="nextcloud,synology,custom" style="display:${['nextcloud','synology','custom'].includes(user?.cloudConfig?.preset) ? 'flex' : 'none'};">
+              <span class="settings-label">服务器地址</span>
+              <input type="url" class="settings-input" id="set-cloud-server" placeholder="https://your-server.com/remote.php/dav/" value="${user?.cloudConfig?.serverUrl || ''}">
+            </div>
+
+            <!-- 代理地址（仅坚果云需要） -->
+            <div class="settings-row cloud-field" data-for="jianguoyun" style="display:${user?.cloudConfig?.preset === 'jianguoyun' ? 'flex' : 'none'};">
+              <span class="settings-label">代理地址</span>
+              <input type="url" class="settings-input" id="set-cloud-proxy" placeholder="http://localhost:3001/proxy" value="${user?.cloudConfig?.proxyUrl || 'http://localhost:3001/proxy'}">
+            </div>
+            <p class="cloud-field" data-for="jianguoyun" style="display:${user?.cloudConfig?.preset === 'jianguoyun' ? 'block' : 'none'}; font-size:12px; color:var(--text-secondary); margin:4px 0 8px;">
+              坚果云不支持浏览器直连，需要本地运行中转服务。
+            </p>
+
+            <!-- 用户名 -->
+            <div class="settings-row cloud-field" data-for="jianguoyun,nextcloud,synology,custom">
+              <span class="settings-label">账号 / 邮箱</span>
+              <input type="text" class="settings-input" id="set-cloud-username" placeholder="your@email.com" value="${user?.cloudConfig?.username || ''}">
+            </div>
+
+            <!-- 密码 -->
+            <div class="settings-row cloud-field" data-for="jianguoyun,nextcloud,synology,custom">
+              <span class="settings-label">密码</span>
+              <input type="password" class="settings-input" id="set-cloud-password" placeholder="应用密码" value="${user?.cloudConfig?.password || ''}">
+            </div>
+            <p class="cloud-field" data-for="jianguoyun" style="display:${user?.cloudConfig?.preset === 'jianguoyun' ? 'block' : 'none'}; font-size:12px; color:var(--text-secondary); margin:4px 0 8px;">
+              在坚果云「设置 → 安全选项 → 第三方应用管理」中生成应用密码。
+            </p>
+            <p class="cloud-field" data-for="nextcloud,synology,custom" style="display:${['nextcloud','synology','custom'].includes(user?.cloudConfig?.preset) ? 'block' : 'none'}; font-size:12px; color:var(--text-secondary); margin:4px 0 8px;">
+              填写 WebDAV 登录密码。如服务器支持 CORS 可不填代理。
+            </p>
+
+            <!-- 代理地址（可选，非坚果云） -->
+            <div class="settings-row cloud-field" data-for="nextcloud,synology,custom" style="display:${['nextcloud','synology','custom'].includes(user?.cloudConfig?.preset) ? 'flex' : 'none'};">
+              <span class="settings-label">代理地址 <span style="color:var(--text-secondary); font-weight:400;">（选填）</span></span>
+              <input type="url" class="settings-input" id="set-cloud-proxy-general" placeholder="留空则直连服务器" value="${user?.cloudConfig?.proxyUrl || ''}">
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+              <button class="btn-secondary" id="btn-test-cloud">测试连接</button>
+              <button class="btn-primary" id="btn-save-cloud">保存配置</button>
+            </div>
           </div>
-          <div style="display:flex; gap:10px; margin-top:10px;">
-            <button class="btn-secondary" id="btn-test-cloud">测试连接</button>
-            <button class="btn-primary" id="btn-save-cloud">保存配置</button>
-          </div>
+
           <div class="settings-row" style="margin-top:8px;">
             <span class="settings-label">同步状态</span>
             <span class="settings-value" id="cloud-status">${user?.cloudConfig?.username ? '已配置' : '未配置'}</span>
@@ -142,7 +188,7 @@ const Settings = {
           </div>
           <div class="settings-row">
             <span class="settings-label">数据存储</span>
-            <span class="settings-value">本地浏览器</span>
+            <span class="settings-value">${user?.cloudConfig?.provider ? '本地 + 云盘' : '本地浏览器'}</span>
           </div>
         </div>
 
@@ -167,25 +213,30 @@ const Settings = {
       Router.navigate('/login');
     });
 
+    // 云盘类型切换
+    container.querySelector('#set-cloud-type').addEventListener('change', e => {
+      const preset = e.target.value;
+      const form = document.getElementById('cloud-config-form');
+      form.style.display = preset ? 'block' : 'none';
+
+      // 显示/隐藏对应字段
+      container.querySelectorAll('.cloud-field').forEach(field => {
+        const forTypes = field.dataset.for?.split(',') || [];
+        field.style.display = forTypes.includes(preset) ? (field.tagName === 'P' ? 'block' : 'flex') : 'none';
+      });
+    });
+
     // 测试云盘连接
     container.querySelector('#btn-test-cloud').addEventListener('click', async () => {
-      const username = document.getElementById('set-cloud-username').value.trim();
-      const password = document.getElementById('set-cloud-password').value.trim();
-
-      if (!username || !password) {
-        Utils.toast('请填写坚果云邮箱和应用密码');
-        return;
-      }
+      const cloudConfig = _buildCloudConfig();
+      if (!cloudConfig) return;
 
       try {
         Utils.toast('正在连接...');
-        const testProvider = new WebDAVProvider({
-          proxyUrl: 'http://localhost:3001/proxy',
-          username,
-          password
-        });
+        const providerConfig = _toProviderConfig(cloudConfig);
+        const testProvider = new WebDAVProvider(providerConfig);
         await testProvider.testConnection();
-        Utils.toast('连接成功！坚果云已就绪');
+        Utils.toast('连接成功！云盘已就绪');
         document.getElementById('cloud-status').textContent = '连接正常 ✓';
         document.getElementById('cloud-status').style.color = '#34C759';
       } catch (err) {
@@ -197,30 +248,74 @@ const Settings = {
 
     // 保存云盘配置
     container.querySelector('#btn-save-cloud').addEventListener('click', () => {
-      const username = document.getElementById('set-cloud-username').value.trim();
-      const password = document.getElementById('set-cloud-password').value.trim();
-
-      if (!username || !password) {
-        Utils.toast('请填写完整的坚果云信息');
-        return;
-      }
+      const cloudConfig = _buildCloudConfig();
+      if (!cloudConfig) return;
 
       if (user) {
-        user.cloudConfig = {
-          provider: 'webdav',
-          proxyUrl: 'http://localhost:3001/proxy',
-          username,
-          password
-        };
-        // 保存到用户列表
+        user.cloudConfig = cloudConfig;
         const users = Store.getUsers().map(u =>
           u.id === user.id ? user : u
         );
         Store.saveUsers(users);
         authService.setCurrentUser(user);
         Utils.toast('云盘配置已保存');
+        document.getElementById('cloud-status').textContent = '已配置';
+        document.getElementById('cloud-status').style.color = '';
       }
     });
+
+    /* 从表单构建云盘配置 */
+    function _buildCloudConfig() {
+      const preset = document.getElementById('set-cloud-type').value;
+      if (!preset) {
+        Utils.toast('请先选择云盘类型');
+        return null;
+      }
+
+      const username = document.getElementById('set-cloud-username').value.trim();
+      const password = document.getElementById('set-cloud-password').value.trim();
+      if (!username || !password) {
+        Utils.toast('请填写账号和密码');
+        return null;
+      }
+
+      const config = {
+        provider: 'webdav',
+        preset,
+        username,
+        password
+      };
+
+      // 根据类型填充服务器地址
+      if (preset === 'jianguoyun') {
+        config.serverUrl = 'https://dav.jianguoyun.com/dav';
+        config.proxyUrl = document.getElementById('set-cloud-proxy').value.trim() || 'http://localhost:3001/proxy';
+      } else if (preset === 'nextcloud') {
+        config.serverUrl = document.getElementById('set-cloud-server').value.trim();
+        config.proxyUrl = document.getElementById('set-cloud-proxy-general').value.trim();
+        if (!config.serverUrl) { Utils.toast('请填写 Nextcloud 服务器地址'); return null; }
+      } else if (preset === 'synology') {
+        config.serverUrl = document.getElementById('set-cloud-server').value.trim();
+        config.proxyUrl = document.getElementById('set-cloud-proxy-general').value.trim();
+        if (!config.serverUrl) { Utils.toast('请填写群晖服务器地址'); return null; }
+      } else if (preset === 'custom') {
+        config.serverUrl = document.getElementById('set-cloud-server').value.trim();
+        config.proxyUrl = document.getElementById('set-cloud-proxy-general').value.trim();
+        if (!config.serverUrl) { Utils.toast('请填写 WebDAV 服务器地址'); return null; }
+      }
+
+      return config;
+    }
+
+    /* 将用户配置转为 WebDAVProvider 构造参数 */
+    function _toProviderConfig(cloudConfig) {
+      return {
+        serverUrl: cloudConfig.serverUrl,
+        proxyUrl: cloudConfig.proxyUrl || '',
+        username: cloudConfig.username,
+        password: cloudConfig.password
+      };
+    }
 
     // 创建空间
     container.querySelector('#btn-create-space').addEventListener('click', async () => {
