@@ -34,9 +34,18 @@ const Login = {
       }
 
       try {
-        await userService.login(phone);
+        const user = await userService.login(phone);
+        // 同步到 authService
+        authService.setCurrentUser(user);
         Utils.toast('登录成功！');
-        Router.navigate('/');
+        // 登录后判断是否有空间
+        const user = authService.getCurrentUser();
+        const spaces = invitationService.getUserSpaces(user?.id || '');
+        if (spaces.length === 0 && !Store.getConfig()) {
+          Router.navigate('/join');
+        } else {
+          Router.navigate('/');
+        }
       } catch (err) {
         Utils.toast('登录失败: ' + err.message);
       }

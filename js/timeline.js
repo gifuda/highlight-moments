@@ -359,114 +359,25 @@ const Timeline = {
   _renderOnboarding(container) {
     document.getElementById('header-title').textContent = '高光时刻';
 
-    const defaultColors = ['#FF6B6B', '#4ECDC4', '#FFD93D', '#6C5CE7', '#FF8A5C', '#A8E6CF'];
-
     container.innerHTML = `
       <div class="page">
         <div class="onboarding">
           <h2>记录你的高光时刻</h2>
-          <p>和重要的人一起，用文字和照片珍藏每一个美好瞬间。<br>数据完全属于你，永远可以带走。</p>
-          <div class="onboarding-form">
-            <div class="form-group">
-              <label class="form-label">给这个空间取个名字</label>
-              <input type="text" class="form-input" id="onb-space" placeholder="比如：我们的故事" value="我们的故事">
-            </div>
-            <div class="form-group">
-              <label class="form-label">添加成员（至少 1 人）</label>
-              <div class="author-list-input" id="onb-authors">
-                <div class="author-input-row">
-                  <div class="color-dot selected" style="background:${defaultColors[0]}" data-color="${defaultColors[0]}"></div>
-                  <input type="text" class="form-input" id="onb-name-0" placeholder="你的名字" style="flex:1; text-align:left;">
-                </div>
-              </div>
-              <button class="btn-secondary" id="onb-add-author" style="margin-top:10px;">+ 添加成员</button>
-            </div>
-            <button class="btn-primary" id="onb-start">开始记录</button>
+          <p>和重要的人一起，用文字和照片珍藏每一个美好瞬间。</p>
+          <div class="onboarding-form" style="margin-top:30px;">
+            <button class="btn-primary" id="onb-register" style="width:100%;">注册新用户</button>
+            <div style="height:12px;"></div>
+            <button class="btn-secondary" id="onb-login" style="width:100%;">已有账号？登录</button>
           </div>
         </div>
       </div>
     `;
 
-    let authorCount = 1;
-    let selectedColors = [defaultColors[0]];
-
-    // 颜色选择
-    container.addEventListener('click', e => {
-      const dot = e.target.closest('.color-dot');
-      if (!dot) return;
-
-      // 显示颜色选择弹窗
-      const row = dot.closest('.author-input-row');
-      const existingPicker = row.querySelector('.color-picker');
-      if (existingPicker) { existingPicker.remove(); return; }
-
-      const picker = document.createElement('div');
-      picker.className = 'color-picker';
-      picker.style.cssText = 'display:flex; gap:6px; margin-top:6px;';
-      for (const color of defaultColors) {
-        const c = document.createElement('div');
-        c.className = 'color-dot' + (dot.dataset.color === color ? ' selected' : '');
-        c.style.background = color;
-        c.dataset.color = color;
-        c.addEventListener('click', () => {
-          dot.style.background = color;
-          dot.dataset.color = color;
-          dot.classList.add('selected');
-          picker.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
-          c.classList.add('selected');
-          picker.remove();
-        });
-        picker.appendChild(c);
-      }
-      row.appendChild(picker);
+    container.querySelector('#onb-register').addEventListener('click', () => {
+      Router.navigate('/register');
     });
-
-    // 添加成员
-    container.querySelector('#onb-add-author').addEventListener('click', () => {
-      const list = document.getElementById('onb-authors');
-      const color = defaultColors[authorCount % defaultColors.length];
-      const row = document.createElement('div');
-      row.className = 'author-input-row';
-      row.innerHTML = `
-        <div class="color-dot selected" style="background:${color}" data-color="${color}"></div>
-        <input type="text" class="form-input" id="onb-name-${authorCount}" placeholder="名字" style="flex:1; text-align:left;">
-        <button class="icon-btn onb-remove-author" title="移除" style="color:#FF3B30;">×</button>
-      `;
-      list.appendChild(row);
-      row.querySelector('.onb-remove-author').addEventListener('click', () => row.remove());
-      authorCount++;
-    });
-
-    // 开始
-    container.querySelector('#onb-start').addEventListener('click', () => {
-      const spaceName = document.getElementById('onb-space').value.trim() || '我们的故事';
-      const rows = container.querySelectorAll('.author-input-row');
-
-      const authors = [];
-      rows.forEach((row, i) => {
-        const name = row.querySelector('input').value.trim();
-        const color = row.querySelector('.color-dot').dataset.color;
-        if (name) {
-          authors.push({ id: 'user-' + i, name, color });
-        }
-      });
-
-      if (authors.length === 0) {
-        Utils.toast('请至少添加一个成员');
-        return;
-      }
-
-      const config = {
-        version: '1.0.0',
-        spaceName,
-        authors,
-        currentAuthor: authors[0].id,
-        createdAt: new Date().toISOString()
-      };
-      Store.saveConfig(config);
-      document.getElementById('header-title').textContent = spaceName;
-      Router.navigate('/');
-      Utils.toast('设置完成，开始记录吧！');
+    container.querySelector('#onb-login').addEventListener('click', () => {
+      Router.navigate('/login');
     });
   }
 };

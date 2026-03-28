@@ -24,6 +24,7 @@
     Router.on('/settings', () => Settings.render());
     Router.on('/register', () => Register.render());
     Router.on('/login', () => Login.render());
+    Router.on('/join', () => Join.render());
 
     // 6. 启动路由（根据当前 URL hash 渲染页面）
     Router.init();

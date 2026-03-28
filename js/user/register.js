@@ -65,9 +65,11 @@ const Register = {
       }
 
       try {
-        await userService.register(phone, name, color);
+        const user = await userService.register(phone, name, color);
+        // 同步到 authService，确保全局一致
+        authService.setCurrentUser(user);
         Utils.toast('注册成功！');
-        Router.navigate('/');
+        Router.navigate('/join');
       } catch (err) {
         Utils.toast('注册失败: ' + err.message);
       }

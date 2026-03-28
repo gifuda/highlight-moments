@@ -61,6 +61,14 @@ const Router = {
       return;
     }
 
+    // 带参数匹配：/join
+    if (hash === '/join' && this.routes['/join']) {
+      this.currentRoute = hash;
+      this.routes['/join']();
+      this._updateNav('/join');
+      return;
+    }
+
     // 未匹配 → 回到首页
     this.navigate('/');
   },

@@ -26,6 +26,7 @@ const ASSETS = [
   '/js/user/UserService.js',
   '/js/user/register.js',
   '/js/user/login.js',
+  '/js/user/join.js',
   '/manifest.json'
 ];
 

@@ -232,8 +232,19 @@ const Settings = {
 
       try {
         const space = invitationService.createSpace(spaceName, user.id);
+        // 确保 config 存在
+        if (!Store.getConfig()) {
+          Store.saveConfig({
+            version: '1.0.0',
+            spaceName,
+            authors: [],
+            currentAuthor: user.id,
+            createdAt: new Date().toISOString()
+          });
+        }
+        document.getElementById('header-title').textContent = spaceName;
         Utils.toast('空间创建成功！');
-        Settings.render(); // 重新渲染设置页面
+        Settings.render();
       } catch (err) {
         Utils.toast('创建空间失败: ' + err.message);
       }
