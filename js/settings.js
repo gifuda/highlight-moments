@@ -166,8 +166,9 @@ const Settings = {
     // 退出登录
     container.querySelector('#btn-logout').addEventListener('click', () => {
       authService.clearCurrentUser();
+      userService.clearCurrentUser();
       Utils.toast('已退出登录');
-      Router.navigate('/');
+      Router.navigate('/login');
     });
 
     // 测试云盘连接
