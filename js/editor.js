@@ -15,9 +15,17 @@ const Editor = {
     this.isUploading = false;
 
     const container = document.getElementById('app-container');
+    const currentUser = authService.getCurrentUser();
+
+    // 未登录 → 跳转登录
+    if (!currentUser) {
+      Utils.toast('请先登录');
+      Router.navigate('/login');
+      return;
+    }
+
     const isEdit = !!editId;
     let record = null;
-    const currentUser = authService.getCurrentUser();
 
     // 添加分享样式
     this._addShareStyles();

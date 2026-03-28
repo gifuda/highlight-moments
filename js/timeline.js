@@ -10,10 +10,17 @@ const Timeline = {
   /* 渲染时间轴页面 */
   render() {
     const container = document.getElementById('app-container');
+    const currentUser = authService.getCurrentUser();
+
+    // 未登录 → 引导页
+    if (!currentUser) {
+      this._renderOnboarding(container);
+      return;
+    }
+
     const config = Store.getConfig();
 
     if (!config) {
-      // 还没设置，显示引导
       this._renderOnboarding(container);
       return;
     }
