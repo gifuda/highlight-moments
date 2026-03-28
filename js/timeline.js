@@ -164,9 +164,8 @@ const Timeline = {
 
   /* 渲染单张卡片 */
   _renderCard(record) {
-    const config = Store.getConfig();
-    const authorInfo = config?.authors?.find(a => a.id === record.authorId) || {};
-    const authorColor = authorInfo.color || '#86868B';
+    const authorInfo = Store.getUsers().find(u => u.id === record.authorId) || {};
+    const authorColor = record.authorColor || authorInfo.color || '#86868B';
     const mood = Record.getMood(record.mood);
     const isCurrentUser = authService.getCurrentUser()?.id === record.authorId;
 

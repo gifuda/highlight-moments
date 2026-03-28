@@ -33,7 +33,6 @@ const Editor = {
     }
 
     const config = Store.getConfig();
-    const authors = config?.authors || [];
 
     container.innerHTML = `
       <div class="editor-page">
@@ -43,13 +42,9 @@ const Editor = {
           <button class="editor-save" id="editor-save">保存</button>
         </div>
 
-        <div class="author-selector" id="author-selector">
-          ${authors.map((a, i) => `
-            <button class="author-option ${i === 0 ? 'active' : ''}" data-author-id="${a.id}" data-author-name="${a.name}">
-              <span class="author-dot" style="background:${a.color}"></span>
-              ${a.name}
-            </button>
-          `).join('')}
+        <div class="author-selector" id="author-selector" style="pointer-events:none;">
+            <span class="author-dot" style="background:${currentUser?.color || '#86868B'}"></span>
+            ${currentUser?.name || '匿名用户'}
         </div>
 
         <textarea class="editor-textarea" id="editor-text" placeholder="记录这一刻..." maxlength="2000">${isEdit ? record.content : ''}</textarea>
@@ -88,11 +83,8 @@ const Editor = {
       </div>
     `;
 
-    // 设置当前选中的作者（编辑模式）
+    // 编辑模式：恢复心情
     if (isEdit && record) {
-      const btn = container.querySelector(`[data-author-id="${record.authorId}"]`);
-      if (btn) this._selectAuthor(btn);
-      // 设置心情
       if (record.mood) {
         container.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
         container.querySelector(`.mood-btn[data-mood="${record.mood}"]`)?.classList.add('active');
@@ -136,11 +128,7 @@ const Editor = {
     // 保存
     container.querySelector('#editor-save').addEventListener('click', () => this._save());
 
-    // 作者切换
-    container.querySelector('#author-selector').addEventListener('click', e => {
-      const btn = e.target.closest('.author-option');
-      if (btn) this._selectAuthor(btn);
-    });
+    // 作者信息自动取当前登录用户，无需手动切换
 
     // 心情切换
     container.querySelector('#mood-selector').addEventListener('click', e => {
@@ -301,14 +289,15 @@ const Editor = {
       return;
     }
 
-    const authorBtn = document.querySelector('.author-option.active');
+    const currentUser = authService.getCurrentUser();
     const moodBtn = document.querySelector('.mood-btn.active');
     const tagPills = document.querySelectorAll('.tag-pill');
     const tags = Array.from(tagPills).map(p => p.dataset.tag).filter(Boolean);
 
     const data = {
-      author: authorBtn?.dataset.authorName || '我',
-      authorId: authorBtn?.dataset.authorId || 'default',
+      author: currentUser?.name || '我',
+      authorId: currentUser?.id || 'default',
+      authorColor: currentUser?.color || '#86868B',
       content,
       mood: moodBtn?.dataset.mood || '',
       tags,
