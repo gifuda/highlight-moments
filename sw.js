@@ -3,7 +3,7 @@
    让应用在无网络时也能正常使用
    ============================================ */
 
-const CACHE_NAME = 'highlight-v2';
+const CACHE_NAME = 'highlight-v3';
 const ASSETS = [
   '/',
   '/index.html',

@@ -290,7 +290,9 @@ const Settings = {
 
     // ===== 云盘卡片选择（仅创建者可见） =====
     if (isCreator) {
+    let _selectedPreset = currentPreset || '';
     const _highlightCard = (type) => {
+      _selectedPreset = type;
       container.querySelectorAll('.cloud-card').forEach(c => {
         if (c.dataset.type === type) {
           c.style.borderColor = '#007AFF';
@@ -373,14 +375,7 @@ const Settings = {
     });
 
     function _buildCloudConfig() {
-      // 从高亮的卡片获取类型
-      const activeCard = container.querySelector('.cloud-card[style*="border-color: rgb(0, 122, 255)"], .cloud-card[style*="#007AFF"]');
-      // 更可靠的方式：遍历找 borderColor 不是 #E5E5EA 的
-      let preset = '';
-      container.querySelectorAll('.cloud-card').forEach(c => {
-        if (c.style.borderColor !== '#E5E5EA') preset = c.dataset.type;
-      });
-
+      const preset = _selectedPreset;
       if (!preset) {
         Utils.toast('请先选择云盘类型');
         return null;
