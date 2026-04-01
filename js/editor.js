@@ -78,13 +78,6 @@ const Editor = {
             照片
           </label>
           <input type="file" id="attach-photo" accept="image/*" multiple hidden>
-          <label class="attach-btn" for="attach-video">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
-            </svg>
-            视频
-          </label>
-          <input type="file" id="attach-video" accept="video/*" hidden>
         </div>
 
         <div class="attachment-preview" id="attachment-preview"></div>
@@ -176,12 +169,6 @@ const Editor = {
 
     // 添加照片
     container.querySelector('#attach-photo').addEventListener('change', e => {
-      this._handleFiles(Array.from(e.target.files));
-      e.target.value = '';
-    });
-
-    // 添加视频
-    container.querySelector('#attach-video').addEventListener('change', e => {
       this._handleFiles(Array.from(e.target.files));
       e.target.value = '';
     });
