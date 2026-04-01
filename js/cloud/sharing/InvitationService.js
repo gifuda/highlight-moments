@@ -114,6 +114,13 @@ class InvitationService {
     return space?.members || [];
   }
 
+  /* 检查名字在空间内是否唯一 */
+  isNameUniqueInSpace(spaceId, name) {
+    const memberIds = this.getSpaceMembers(spaceId);
+    const users = Store.getUsers();
+    return !users.some(u => memberIds.includes(u.id) && u.name === name);
+  }
+
   /* 获取用户的空间 */
   getUserSpaces(userId) {
     const spaces = Store.getSpaces();
