@@ -17,6 +17,8 @@ const Settings = {
 
     const recordCount = Store.getRecords().length;
     const currentPreset = user?.cloudConfig?.preset || '';
+    // 判断是否为空间创建者（只有创建者能配置云盘）
+    const isCreator = spaces.length > 0 && spaces[0].creatorId === user?.id;
 
     container.innerHTML = `
       <div class="page">
@@ -57,6 +59,7 @@ const Settings = {
           </div>
         </div>
 
+        ${isCreator ? `
         <div class="settings-section">
           <h3>云盘同步</h3>
           <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
@@ -193,6 +196,7 @@ const Settings = {
             <span class="settings-value" id="cloud-status">${user?.cloudConfig?.username ? '已配置' : '未配置'}</span>
           </div>
         </div>
+        ` : ''}
 
         <div class="settings-section">
           <h3>空间管理</h3>
@@ -257,7 +261,7 @@ const Settings = {
           </div>
           <div class="settings-row">
             <span class="settings-label">数据存储</span>
-            <span class="settings-value">${user?.cloudConfig?.provider ? '本地 + 云盘' : '本地浏览器'}</span>
+            <span class="settings-value">${user?.cloudConfig?.provider && isCreator ? '本地 + 云盘' : '本地浏览器'}</span>
           </div>
         </div>
 
@@ -284,7 +288,8 @@ const Settings = {
       Router.navigate('/login');
     });
 
-    // ===== 云盘卡片选择 =====
+    // ===== 云盘卡片选择（仅创建者可见） =====
+    if (isCreator) {
     const _highlightCard = (type) => {
       container.querySelectorAll('.cloud-card').forEach(c => {
         if (c.dataset.type === type) {
@@ -413,6 +418,8 @@ const Settings = {
         password: cloudConfig.password
       };
     }
+
+    } // end isCreator
 
     // 创建空间
     container.querySelector('#btn-create-space').addEventListener('click', async () => {
