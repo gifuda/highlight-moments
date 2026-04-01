@@ -12,6 +12,10 @@ const Record = {
     { key: 'peaceful', label: '宁静', emoji: '🌿', color: '#E8F5E9' },
     { key: 'funny', label: '搞笑', emoji: '😄', color: '#FFFDE7' },
     { key: 'touching', label: '感动', emoji: '🥹', color: '#F3E5F5' },
+    { key: 'thinking', label: '感悟', emoji: '💭', color: '#E8EAF6' },
+    { key: 'calm', label: '平淡', emoji: '☁️', color: '#ECEFF1' },
+    { key: 'sad', label: '难过', emoji: '😢', color: '#E3F2FD' },
+    { key: 'anxious', label: '焦虑', emoji: '😰', color: '#FBE9E7' },
   ],
 
   getMood(key) {
