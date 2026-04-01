@@ -29,15 +29,25 @@
     // 6. 启动路由（根据当前 URL hash 渲染页面）
     Router.init();
 
-    // 7. 底部导航栏点击事件
+    // 7. 底部导航栏点击事件（拦截需登录的页面）
     document.querySelectorAll('.nav-item[data-route]').forEach(btn => {
       btn.addEventListener('click', () => {
-        Router.navigate(btn.dataset.route);
+        const route = btn.dataset.route;
+        // 未登录时，只允许访问首页（引导页）
+        if (!authService.getCurrentUser() && route !== '/') {
+          Router.navigate('/login');
+          return;
+        }
+        Router.navigate(route);
       });
     });
 
     // 8. 设置按钮
     document.getElementById('btn-settings').addEventListener('click', () => {
+      if (!authService.getCurrentUser()) {
+        Router.navigate('/login');
+        return;
+      }
       Router.navigate('/settings');
     });
 
