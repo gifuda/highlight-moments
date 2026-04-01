@@ -30,7 +30,10 @@ class WebDAVProvider extends CloudProvider {
       const xhr = new XMLHttpRequest();
       xhr.open(method, this._buildUrl(path), true);
       xhr.setRequestHeader('Authorization', this.authHeader);
-      xhr.setRequestHeader('Content-Type', 'application/json');
+      // PROPFIND 等方法不设 Content-Type，其他方法根据需要设置
+      if (body && method !== 'PROPFIND') {
+        xhr.setRequestHeader('Content-Type', 'application/json');
+      }
       for (const [k, v] of Object.entries(extraHeaders)) {
         xhr.setRequestHeader(k, v);
       }
