@@ -118,8 +118,12 @@ const Settings = {
                 1. 登录坚果云网页版 → 右上角头像 → <strong>安全选项</strong><br>
                 2. 找到「<strong>第三方应用管理</strong>」→ 添加应用<br>
                 3. 生成一个 <strong>应用专用密码</strong>（不是登录密码）<br>
-                4. 本地启动中转服务：<code style="background:#E8E8E8; padding:2px 6px; border-radius:4px;">node server/proxy.js</code><br>
-                5. 将邮箱作为 API 账号，应用密码作为 API 密钥填入下方
+                4. 部署 Cloudflare Worker 代理（推荐，免费）：<br>
+                   &nbsp;&nbsp;&nbsp;a. 注册 <a href="https://dash.cloudflare.com" target="_blank" style="color:#007AFF;">Cloudflare</a>（免费）<br>
+                   &nbsp;&nbsp;&nbsp;b. Workers & Pages → 创建 Worker → 粘贴 <code style="background:#E8E8E8; padding:2px 6px; border-radius:4px;">server/worker.js</code> 内容<br>
+                   &nbsp;&nbsp;&nbsp;c. 保存后复制 URL，填入下方代理地址<br>
+                5. 或本地启动代理：<code style="background:#E8E8E8; padding:2px 6px; border-radius:4px;">node server/proxy.js</code>（仅同一 WiFi 可用）<br>
+                6. 将邮箱作为 API 账号，应用密码作为 API 密钥填入下方
               </div>
             </div>
 
@@ -380,6 +384,26 @@ const Settings = {
         Utils.toast('云盘配置已保存');
         document.getElementById('cloud-status').textContent = '已配置';
         document.getElementById('cloud-status').style.color = '';
+
+        // 更新邀请码（现在包含了云盘配置）
+        const invSection = document.getElementById('settings-invitations');
+        if (invSection && spaces[spaceIdx]) {
+          const newCode = invitationService.generateInviteCode(spaces[spaceIdx].id, spaces[spaceIdx].name, cloudConfig);
+          invSection.innerHTML = `
+            <div class="invitation-item">
+              <div class="invitation-code" style="word-break:break-all; font-size:13px; letter-spacing:1px;">${newCode}</div>
+              <button class="btn-secondary" data-code="${newCode}" style="margin-top:8px;">复制邀请码</button>
+            </div>
+          `;
+          // 重新绑定复制按钮
+          invSection.querySelector('.btn-secondary[data-code]').addEventListener('click', () => {
+            navigator.clipboard.writeText(newCode).then(() => {
+              Utils.toast('邀请码已复制到剪贴板');
+            }).catch(() => {
+              Utils.toast('复制失败，请手动复制');
+            });
+          });
+        }
       }
     });
 
