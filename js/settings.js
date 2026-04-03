@@ -148,14 +148,12 @@ const Settings = {
               <div style="font-size:13px; font-weight:600; margin-bottom:8px;">如何获取坚果云 API 接口信息</div>
               <div style="font-size:12px; color:var(--text-secondary); line-height:1.8;">
                 1. 登录坚果云网页版 → 右上角头像 → <strong>安全选项</strong><br>
-                2. 找到「<strong>第三方应用管理</strong>」→ 添加应用<br>
-                3. 生成一个 <strong>应用专用密码</strong>（不是登录密码）<br>
-                4. 部署 Cloudflare Worker 代理（推荐，免费）：<br>
-                   &nbsp;&nbsp;&nbsp;a. 注册 <a href="https://dash.cloudflare.com" target="_blank" style="color:#007AFF;">Cloudflare</a>（免费）<br>
-                   &nbsp;&nbsp;&nbsp;b. Workers & Pages → 创建 Worker → 粘贴 <code style="background:#E8E8E8; padding:2px 6px; border-radius:4px;">server/worker.js</code> 内容<br>
-                   &nbsp;&nbsp;&nbsp;c. 保存后复制 URL，填入下方代理地址<br>
-                5. 或本地启动代理：<code style="background:#E8E8E8; padding:2px 6px; border-radius:4px;">node server/proxy.js</code>（仅同一 WiFi 可用）<br>
-                6. 将邮箱作为 API 账号，应用密码作为 API 密钥填入下方
+                2. 找到「<strong>第三方应用管理</strong>」→ 添加应用 → 生成 <strong>应用专用密码</strong><br>
+                3. 部署 Vercel 代理（免费，国内可用）：<br>
+                   &nbsp;&nbsp;&nbsp;a. 打开 <a href="https://vercel.com" target="_blank" style="color:#007AFF;">vercel.com</a> 用 GitHub 登录<br>
+                   &nbsp;&nbsp;&nbsp;b. Add New → Project → Import highlight-moments 仓库 → Deploy<br>
+                   &nbsp;&nbsp;&nbsp;c. 代理地址填 <code style="background:#E8E8E8; padding:2px 6px; border-radius:4px;">https://你的项目.vercel.app/api/proxy</code><br>
+                4. 将邮箱作为 API 账号，应用密码作为 API 密钥填入下方
               </div>
             </div>
 
