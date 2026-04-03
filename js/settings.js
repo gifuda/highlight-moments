@@ -75,6 +75,14 @@ const Settings = {
               </div>
             </div>
 
+            <div class="cloud-card" data-type="github" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid #E5E5EA; cursor:pointer;">
+              <div style="width:36px; height:36px; border-radius:8px; background:#E8F5E9; display:flex; align-items:center; justify-content:center; font-size:18px;">🐙</div>
+              <div style="flex:1;">
+                <div style="font-weight:600; font-size:15px;">GitHub 推荐</div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;">无需代理，国内可用，免费</div>
+              </div>
+            </div>
+
             <div class="cloud-card" data-type="jianguoyun" style="display:flex; align-items:center; gap:12px; padding:14px; border-radius:12px; border:2px solid #E5E5EA; cursor:pointer;">
               <div style="width:36px; height:36px; border-radius:8px; background:#E8F5E9; display:flex; align-items:center; justify-content:center; font-size:18px;">🥜</div>
               <div style="flex:1;">
@@ -110,6 +118,30 @@ const Settings = {
 
           <!-- 配置表单区域 -->
           <div id="cloud-config-form" style="margin-top:16px; display:none;">
+
+            <!-- GitHub 引导 -->
+            <div class="cloud-field" data-for="github" style="display:none; background:#F0F9F0; border-radius:10px; padding:14px; margin-bottom:12px;">
+              <div style="font-size:13px; font-weight:600; margin-bottom:8px;">如何配置 GitHub 同步</div>
+              <div style="font-size:12px; color:var(--text-secondary); line-height:1.8;">
+                1. 打开 GitHub → 右上角头像 → <strong>Settings</strong><br>
+                2. 左侧最底部 → <strong>Developer settings</strong><br>
+                3. <strong>Personal access tokens</strong> → Tokens (classic) → Generate new token<br>
+                4. 勾选 <strong>repo</strong> 权限 → 生成 Token<br>
+                5. 新建一个仓库（或使用现有仓库），将仓库名填入下方
+              </div>
+            </div>
+
+            <!-- GitHub 仓库 -->
+            <div class="settings-row cloud-field" data-for="github" style="display:none;">
+              <span class="settings-label">GitHub 仓库</span>
+              <input type="text" class="settings-input" id="set-github-repo" placeholder="owner/repo" value="${user?.cloudConfig?.repo || ''}">
+            </div>
+
+            <!-- GitHub Token -->
+            <div class="settings-row cloud-field" data-for="github" style="display:none;">
+              <span class="settings-label">Access Token</span>
+              <input type="password" class="settings-input" id="set-github-token" placeholder="ghp_xxxx" value="${user?.cloudConfig?.token || ''}">
+            </div>
 
             <!-- 坚果云引导 -->
             <div class="cloud-field" data-for="jianguoyun" style="display:none; background:#F0F9F0; border-radius:10px; padding:14px; margin-bottom:12px;">
@@ -347,10 +379,14 @@ const Settings = {
 
       try {
         Utils.toast('正在连接...');
-        const providerConfig = _toProviderConfig(cloudConfig);
-        const testProvider = new WebDAVProvider(providerConfig);
+        let testProvider;
+        if (cloudConfig.provider === 'github') {
+          testProvider = new GitHubProvider(cloudConfig);
+        } else {
+          testProvider = new WebDAVProvider(_toProviderConfig(cloudConfig));
+        }
         await testProvider.testConnection();
-        Utils.toast('连接成功！云盘已就绪');
+        Utils.toast('连接成功！同步已就绪');
         document.getElementById('cloud-status').textContent = '连接正常 ✓';
         document.getElementById('cloud-status').style.color = '#34C759';
       } catch (err) {
@@ -410,8 +446,18 @@ const Settings = {
     function _buildCloudConfig() {
       const preset = _selectedPreset;
       if (!preset) {
-        Utils.toast('请先选择云盘类型');
+        Utils.toast('请先选择存储方式');
         return null;
+      }
+
+      if (preset === 'github') {
+        const repo = document.getElementById('set-github-repo').value.trim();
+        const token = document.getElementById('set-github-token').value.trim();
+        if (!repo || !token) {
+          Utils.toast('请填写仓库和 Token');
+          return null;
+        }
+        return { provider: 'github', preset, repo, token };
       }
 
       const username = document.getElementById('set-cloud-username').value.trim();

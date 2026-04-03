@@ -14,10 +14,15 @@ class SyncManager {
   /* 初始化：读取用户云盘配置，创建 Provider */
   async init() {
     const user = authService.getCurrentUser();
-    if (!user?.cloudConfig?.username) return;
+    const cfg = user?.cloudConfig;
+    if (!cfg) return;
 
     try {
-      this.provider = new WebDAVProvider(user.cloudConfig);
+      if (cfg.provider === 'github' && cfg.token) {
+        this.provider = new GitHubProvider(cfg);
+      } else if (cfg.username) {
+        this.provider = new WebDAVProvider(cfg);
+      }
       this.lastSync = localStorage.getItem('hl_last_sync');
     } catch (err) {
       console.warn('SyncManager 初始化失败:', err.message);
@@ -167,7 +172,7 @@ class SyncManager {
   /* 完整双向同步（手动触发） */
   async fullSync() {
     if (!this.provider) {
-      Utils.toast('请先配置云盘');
+      Utils.toast('请先配置同步服务');
       return;
     }
     await this.pullRecords();
@@ -205,6 +210,10 @@ class SyncManager {
 
   isConfigured() {
     return !!this.provider;
+  }
+
+  isGitHub() {
+    return this.provider instanceof GitHubProvider;
   }
 }
 

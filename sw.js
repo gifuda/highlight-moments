@@ -3,7 +3,7 @@
    让应用在无网络时也能正常使用
    ============================================ */
 
-const CACHE_NAME = 'highlight-v5';
+const CACHE_NAME = 'highlight-v6';
 const ASSETS = [
   '/',
   '/index.html',
@@ -20,6 +20,7 @@ const ASSETS = [
   '/js/settings.js',
   '/js/cloud/providers/CloudProvider.js',
   '/js/cloud/providers/WebDAVProvider.js',
+  '/js/cloud/providers/GitHubProvider.js',
   '/js/cloud/auth/AuthService.js',
   '/js/cloud/sharing/InvitationService.js',
   '/js/cloud/sync/SyncManager.js',

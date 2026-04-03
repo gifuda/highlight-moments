@@ -73,7 +73,19 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 中转服务已启动: http://localhost:${PORT}`);
-  console.log(`   坚果云 WebDAV 代理路径: http://localhost:${PORT}/proxy/`);
+server.listen(PORT, '0.0.0.0', () => {
+  const os = require('os');
+  const nets = os.networkInterfaces();
+  let lanIp = 'localhost';
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        lanIp = net.address;
+      }
+    }
+  }
+  console.log(`🚀 中转服务已启动`);
+  console.log(`   本机访问: http://localhost:${PORT}/proxy/`);
+  console.log(`   局域网访问: http://${lanIp}:${PORT}/proxy/`);
+  console.log(`   ⚠️  将局域网地址填入高光时刻设置 → 坚果云 → 代理服务地址`);
 });
