@@ -222,7 +222,7 @@ const Settings = {
           <h3>邀请管理</h3>
           <div id="settings-invitations">
             ${spaces.length > 0 ? (() => {
-              const code = invitationService.generateInviteCode(spaces[0].id, spaces[0].name);
+              const code = invitationService.generateInviteCode(spaces[0].id, spaces[0].name, spaces[0].cloudConfig);
               return `
                 <div class="invitation-item">
                   <div class="invitation-code" style="word-break:break-all; font-size:13px; letter-spacing:1px;">${code}</div>
@@ -368,6 +368,15 @@ const Settings = {
         );
         Store.saveUsers(users);
         authService.setCurrentUser(user);
+
+        // 同步写入空间，邀请码生成时会用到
+        const spaces = Store.getSpaces();
+        const spaceIdx = spaces.findIndex(s => s.members.includes(user.id));
+        if (spaceIdx >= 0) {
+          spaces[spaceIdx].cloudConfig = cloudConfig;
+          Store.saveSpaces(spaces);
+        }
+
         Utils.toast('云盘配置已保存');
         document.getElementById('cloud-status').textContent = '已配置';
         document.getElementById('cloud-status').style.color = '';

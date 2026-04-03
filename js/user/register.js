@@ -128,6 +128,11 @@ const Register = {
         return;
       }
 
+      if (!/^1[3-9]\d{9}$/.test(phone)) {
+        Utils.toast('请输入正确的11位手机号');
+        return;
+      }
+
       // 有邀请码时检查名字唯一性
       if (inviteCode) {
         const info = invitationService.parseInviteCode(inviteCode);
@@ -148,6 +153,11 @@ const Register = {
         if (inviteCode) {
           try {
             invitationService.joinSpace(inviteCode, user.id);
+            // 初始化云盘同步（邀请码可能携带了云盘配置）
+            await syncManager.init();
+            if (syncManager.isConfigured()) {
+              syncManager.startAutoSync();
+            }
             Utils.toast('注册成功，已加入空间！');
             Router.navigate('/');
           } catch (err) {

@@ -11,27 +11,26 @@ class InvitationService {
     this.spaces = [];
   }
 
-  /* 生成自包含邀请码（把空间信息编码进去，跨设备可用） */
-  generateInviteCode(spaceId, spaceName) {
-    const payload = JSON.stringify({ s: spaceId, n: spaceName });
-    // 用 base64 编码，去掉可能的 = 填充
-    return btoa(unescape(encodeURIComponent(payload)))
+  /* 生成自包含邀请码（把空间信息+云盘配置编码进去，跨设备可用） */
+  generateInviteCode(spaceId, spaceName, cloudConfig = null) {
+    const payload = { s: spaceId, n: spaceName };
+    if (cloudConfig) payload.c = cloudConfig;
+    const json = JSON.stringify(payload);
+    return btoa(unescape(encodeURIComponent(json)))
       .replace(/=/g, '')
       .replace(/\+/g, '-')
       .replace(/\//g, '_');
   }
 
-  /* 解析邀请码，返回 { spaceId, spaceName } 或 null */
+  /* 解析邀请码，返回 { spaceId, spaceName, cloudConfig } 或 null */
   parseInviteCode(code) {
     try {
-      // 还原 base64 标准字符
       let normalized = code.replace(/-/g, '+').replace(/_/g, '/');
-      // 补齐 base64 填充
       while (normalized.length % 4 !== 0) normalized += '=';
       const json = decodeURIComponent(escape(atob(normalized)));
       const data = JSON.parse(json);
       if (!data.s || !data.n) return null;
-      return { spaceId: data.s, spaceName: data.n };
+      return { spaceId: data.s, spaceName: data.n, cloudConfig: data.c || null };
     } catch {
       return null;
     }
@@ -47,14 +46,13 @@ class InvitationService {
     // 本地创建或查找空间
     let space = Store.getSpace(info.spaceId);
     if (!space) {
-      // 在本地创建这个空间的记录
       space = {
         id: info.spaceId,
         name: info.spaceName,
-        creatorId: null, // 被邀请者不知道创建者 ID
+        creatorId: null,
         members: [],
         createdAt: new Date().toISOString(),
-        cloudConfig: null
+        cloudConfig: info.cloudConfig || null
       };
       const spaces = Store.getSpaces();
       spaces.push(space);
@@ -64,6 +62,17 @@ class InvitationService {
     // 添加自己为成员
     if (!space.members.includes(userId)) {
       this.addMember(space.id, userId);
+    }
+
+    // 如果邀请码携带了云盘配置，写入用户信息
+    if (info.cloudConfig) {
+      const users = Store.getUsers();
+      const user = users.find(u => u.id === userId);
+      if (user && !user.cloudConfig) {
+        user.cloudConfig = info.cloudConfig;
+        Store.saveUsers(users);
+        authService.setCurrentUser(user);
+      }
     }
 
     // 设置 config

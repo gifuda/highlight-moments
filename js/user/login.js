@@ -38,6 +38,13 @@ const Login = {
         // 同步到 authService
         authService.setCurrentUser(user);
         Utils.toast('登录成功！');
+
+        // 初始化云盘同步
+        await syncManager.init();
+        if (syncManager.isConfigured()) {
+          syncManager.startAutoSync();
+        }
+
         // 登录后判断是否有空间
         const spaces = invitationService.getUserSpaces(user.id);
         if (spaces.length === 0 && !Store.getConfig()) {

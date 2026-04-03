@@ -304,11 +304,13 @@ const Editor = {
       const existing = Store.getRecord(this.editingId);
       const updated = Record.update(existing, data);
       Store.saveRecord(updated);
+      syncManager.pushRecord(updated);
       Utils.toast('已更新');
     } else {
       // 新建
       const record = Record.create(data);
       Store.saveRecord(record);
+      syncManager.pushRecord(record);
       // 清除草稿
       sessionStorage.removeItem('hl_draft');
       Utils.toast('已保存');

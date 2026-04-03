@@ -73,16 +73,15 @@ async function initCloudModules() {
   try {
     // 注册云盘提供商
     authService.registerProvider('webdav', WebDAVProvider);
-    // 这里可以添加其他提供商
 
     // 加载当前用户
     const user = authService.loadCurrentUser();
     if (user) {
       // 尝试初始化云盘同步
       await syncManager.init();
-      // 检查是否需要同步
-      if (syncManager.needsSync()) {
-        syncManager.fullSync();
+      if (syncManager.isConfigured()) {
+        // 启动自动同步（30 秒轮询）
+        syncManager.startAutoSync();
       }
     }
   } catch (err) {
